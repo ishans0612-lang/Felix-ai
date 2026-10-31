@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#10101c">
+
+    <title>Felix AI Assistant</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <main class="app-container">
+
+        <header class="top-bar">
+            <h1>Felix AI</h1>
+
+            <select id="languageSelector">
+                <option value="en">English</option>
+                <option value="bn">বাংলা</option>
+                <option value="hi">हिन्दी</option>
+            </select>
+        </header>
+
+        <section class="avatar-section">
+            <div id="avatarContainer">
+                <div id="avatarPlaceholder">
+                    Felix
+                </div>
+            </div>
+
+            <p id="statusText">Felix is ready</p>
+        </section>
+
+        <section class="chat-section">
+
+            <div id="chatMessages">
+                <div class="message assistant-message">
+                    Hello! I am Felix. How can I help you?
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input
+                    type="text"
+                    id="messageInput"
+                    placeholder="Talk to Felix..."
+                    autocomplete="off"
+                >
+
+                <button id="sendButton">Send</button>
+
+                <button id="voiceButton" aria-label="Voice input">
+                    🎤
+                </button>
+            </div>
+
+        </section>
+
+        <footer>
+            <p>Felix AI — Your Virtual Companion</p>
+        </footer>
+
+    </main>
+
+    <script src="app.js"></script>
+
+</body>
+</html>
