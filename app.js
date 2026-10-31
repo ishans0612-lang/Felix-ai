@@ -1,191 +1,242 @@
-const messageInput = document.getElementById("messageInput");
-const sendButton = document.getElementById("sendButton");
-const voiceButton = document.getElementById("voiceButton");
-const chatMessages = document.getElementById("chatMessages");
-const languageSelector = document.getElementById("languageSelector");
-const statusText = document.getElementById("statusText");
 
-const languages = {
-    en: {
-        code: "en-US",
-        greeting: "Hello! I am Felix. How can I help you?",
-        listening: "Listening...",
-        thinking: "Thinking...",
-        ready: "Felix is ready",
-        error: "Sorry, I could not understand that."
-    },
-    bn: {
-        code: "bn-IN",
-        greeting: "হ্যালো! আমি ফেলিক্স। তোমাকে কীভাবে সাহায্য করতে পারি?",
-        listening: "শুনছি...",
-        thinking: "ভাবছি...",
-        ready: "ফেলিক্স প্রস্তুত",
-        error: "দুঃখিত, আমি বুঝতে পারিনি।"
-    },
-    hi: {
-        code: "hi-IN",
-        greeting: "नमस्ते! मैं फेलिक्स हूँ। मैं आपकी कैसे मदद कर सकता हूँ?",
-        listening: "सुन रहा हूँ...",
-        thinking: "सोच रहा हूँ...",
-        ready: "फेलिक्स तैयार है",
-        error: "माफ़ कीजिए, मैं समझ नहीं पाया।"
-    }
-};
+"use strict";
 
-let currentLanguage = "en";
+/*
+ * FELIX AI
+ * Main Application Controller
+ * Languages: English, Bengali, Hindi
+ */
 
-function addMessage(message, type) {
-    const messageElement = document.createElement("div");
+const FelixApp = (() => {
 
-    messageElement.className = `message ${type}`;
-    messageElement.textContent = message;
+    const elements = {
+        input: document.getElementById("messageInput"),
+        send: document.getElementById("sendButton"),
+        voice: document.getElementById("voiceButton"),
+        messages: document.getElementById("chatMessages"),
+        language: document.getElementById("languageSelector"),
+        status: document.getElementById("statusText")
+    };
 
-    chatMessages.appendChild(messageElement);
-    chatMessages.scrollTop = chatMessages.scrollHeight;
-}
+    const translations = {
+        en: {
+            greeting: "Hello! I am Felix. How can I help you?",
+            listening: "Listening...",
+            ready: "Felix is ready",
+            thinking: "Thinking...",
+            voiceError: "Voice recognition failed.",
+            empty: "Please enter a message."
+        },
 
-function speak(message) {
-    if (!("speechSynthesis" in window)) {
-        statusText.textContent = "Voice output is not supported";
-        return;
-    }
+        bn: {
+            greeting: "হ্যালো! আমি ফেলিক্স। কীভাবে তোমাকে সাহায্য করতে পারি?",
+            listening: "শুনছি...",
+            ready: "ফেলিক্স প্রস্তুত",
+            thinking: "ভাবছি...",
+            voiceError: "ভয়েস বুঝতে সমস্যা হয়েছে।",
+            empty: "একটি মেসেজ লেখো।"
+        },
 
-    window.speechSynthesis.cancel();
-
-    const speech = new SpeechSynthesisUtterance(message);
-    speech.lang = languages[currentLanguage].code;
-    speech.rate = 1;
-    speech.pitch = 1.1;
-
-    window.speechSynthesis.speak(speech);
-}
-
-function getReply(message) {
-    const text = message.toLowerCase();
-
-    if (currentLanguage === "en") {
-        if (text.includes("hello") || text.includes("hi")) {
-            return "Hello! It is nice to talk with you.";
+        hi: {
+            greeting: "नमस्ते! मैं फेलिक्स हूँ। मैं आपकी कैसे मदद कर सकता हूँ?",
+            listening: "सुन रहा हूँ...",
+            ready: "फेलिक्स तैयार है",
+            thinking: "सोच रहा हूँ...",
+            voiceError: "आवाज़ समझने में समस्या हुई।",
+            empty: "कृपया संदेश लिखें।"
         }
+    };
 
-        if (text.includes("your name")) {
-            return "My name is Felix. I am your virtual companion.";
-        }
+    let language = "en";
+    let recognition = null;
 
-        if (text.includes("how are you")) {
-            return "I am doing great! How are you?";
-        }
-
-        return "I received your message. My full AI brain will be connected in a later development stage.";
+    function getLanguage() {
+        return translations[language] || translations.en;
     }
 
-    if (currentLanguage === "bn") {
-        if (text.includes("হ্যালো") || text.includes("হাই")) {
-            return "হ্যালো! তোমার সঙ্গে কথা বলে ভালো লাগছে।";
-        }
-
-        if (text.includes("নাম")) {
-            return "আমার নাম ফেলিক্স। আমি তোমার ভার্চুয়াল সঙ্গী।";
-        }
-
-        return "তোমার মেসেজ পেয়েছি। পরবর্তী ধাপে আমার সম্পূর্ণ AI Brain যুক্ত করা হবে।";
+    function setStatus(message) {
+        elements.status.textContent = message;
     }
 
-    if (currentLanguage === "hi") {
-        if (text.includes("नमस्ते") || text.includes("हेलो")) {
-            return "नमस्ते! आपसे बात करके अच्छा लगा।";
-        }
+    function addMessage(message, sender) {
+        const item = document.createElement("div");
 
-        if (text.includes("नाम")) {
-            return "मेरा नाम फेलिक्स है। मैं आपका वर्चुअल साथी हूँ।";
-        }
+        item.classList.add(
+            "message",
+            sender === "user" ? "user-message" : "assistant-message"
+        );
 
-        return "मुझे आपका संदेश मिल गया। अगले चरण में मेरा पूरा AI Brain जोड़ा जाएगा।";
+        item.textContent = message;
+
+        elements.messages.appendChild(item);
+        elements.messages.scrollTop = elements.messages.scrollHeight;
     }
 
-    return languages[currentLanguage].error;
-}
+    function speak(message) {
+        if (!("speechSynthesis" in window)) {
+            return;
+        }
 
-function sendMessage() {
-    const message = messageInput.value.trim();
+        window.speechSynthesis.cancel();
 
-    if (!message) return;
+        const utterance = new SpeechSynthesisUtterance(message);
 
-    addMessage(message, "user-message");
+        const voiceLanguages = {
+            en: "en-US",
+            bn: "bn-IN",
+            hi: "hi-IN"
+        };
 
-    messageInput.value = "";
-    statusText.textContent = languages[currentLanguage].thinking;
+        utterance.lang = voiceLanguages[language];
+        utterance.rate = 1;
+        utterance.pitch = 1.1;
 
-    setTimeout(() => {
-        const reply = getReply(message);
-
-        addMessage(reply, "assistant-message");
-        speak(reply);
-
-        statusText.textContent = languages[currentLanguage].ready;
-    }, 500);
-}
-
-sendButton.addEventListener("click", sendMessage);
-
-messageInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-        sendMessage();
+        window.speechSynthesis.speak(utterance);
     }
-});
 
-languageSelector.addEventListener("change", () => {
-    currentLanguage = languageSelector.value;
+    async function getAIResponse(message) {
+        if (window.FelixAI &&
+            typeof window.FelixAI.getResponse === "function") {
 
-    chatMessages.innerHTML = "";
+            return await window.FelixAI.getResponse(message, language);
+        }
 
-    const greeting = languages[currentLanguage].greeting;
+        return getLanguage().greeting;
+    }
 
-    addMessage(greeting, "assistant-message");
+    async function sendMessage() {
+        const message = elements.input.value.trim();
 
-    statusText.textContent = languages[currentLanguage].ready;
-});
+        if (!message) {
+            setStatus(getLanguage().empty);
+            return;
+        }
 
-const SpeechRecognition =
-    window.SpeechRecognition ||
-    window.webkitSpeechRecognition;
+        addMessage(message, "user");
+        elements.input.value = "";
 
-if (SpeechRecognition) {
-    const recognition = new SpeechRecognition();
-
-    recognition.continuous = false;
-    recognition.interimResults = false;
-
-    voiceButton.addEventListener("click", () => {
-        recognition.lang = languages[currentLanguage].code;
-
-        statusText.textContent = languages[currentLanguage].listening;
+        setStatus(getLanguage().thinking);
+        elements.send.disabled = true;
 
         try {
-            recognition.start();
+            const reply = await getAIResponse(message);
+
+            addMessage(reply, "assistant");
+            speak(reply);
+
         } catch (error) {
-            statusText.textContent = "Voice recognition is busy";
+            console.error("Felix AI error:", error);
+
+            addMessage(
+                "Sorry, something went wrong. Please try again.",
+                "assistant"
+            );
+
+        } finally {
+            elements.send.disabled = false;
+            setStatus(getLanguage().ready);
         }
-    });
+    }
 
-    recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript;
+    function changeLanguage(newLanguage) {
+        if (!translations[newLanguage]) {
+            return;
+        }
 
-        messageInput.value = transcript;
-        sendMessage();
+        language = newLanguage;
+
+        elements.messages.innerHTML = "";
+
+        addMessage(getLanguage().greeting, "assistant");
+        setStatus(getLanguage().ready);
+
+        if (recognition) {
+            recognition.lang = getVoiceLanguage();
+        }
+    }
+
+    function getVoiceLanguage() {
+        return {
+            en: "en-US",
+            bn: "bn-IN",
+            hi: "hi-IN"
+        }[language];
+    }
+
+    function initializeVoice() {
+        const SpeechRecognition =
+            window.SpeechRecognition ||
+            window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            elements.voice.disabled = true;
+            elements.voice.textContent = "Unavailable";
+            return;
+        }
+
+        recognition = new SpeechRecognition();
+
+        recognition.continuous = false;
+        recognition.interimResults = false;
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+
+            elements.input.value = transcript;
+            sendMessage();
+        };
+
+        recognition.onerror = () => {
+            setStatus(getLanguage().voiceError);
+        };
+
+        recognition.onend = () => {
+            setStatus(getLanguage().ready);
+        };
+
+        elements.voice.addEventListener("click", () => {
+            recognition.lang = getVoiceLanguage();
+            setStatus(getLanguage().listening);
+
+            try {
+                recognition.start();
+            } catch (error) {
+                console.error("Voice error:", error);
+                setStatus(getLanguage().voiceError);
+            }
+        });
+    }
+
+    function initialize() {
+        if (!Object.values(elements).every(Boolean)) {
+            console.error("Felix UI elements are missing.");
+            return;
+        }
+
+        elements.send.addEventListener("click", sendMessage);
+
+        elements.input.addEventListener("keydown", (event) => {
+            if (event.key === "Enter") {
+                sendMessage();
+            }
+        });
+
+        elements.language.addEventListener("change", (event) => {
+            changeLanguage(event.target.value);
+        });
+
+        initializeVoice();
+
+        addMessage(getLanguage().greeting, "assistant");
+        setStatus(getLanguage().ready);
+    }
+
+    return {
+        initialize,
+        sendMessage,
+        changeLanguage
     };
 
-    recognition.onerror = () => {
-        statusText.textContent = languages[currentLanguage].error;
-    };
+})();
 
-    recognition.onend = () => {
-        statusText.textContent = languages[currentLanguage].ready;
-    };
-
-} else {
-    voiceButton.disabled = true;
-    voiceButton.textContent = "Unavailable";
-}
-
-statusText.textContent = languages[currentLanguage].ready;
+document.addEventListener("DOMContentLoaded", FelixApp.initialize);
